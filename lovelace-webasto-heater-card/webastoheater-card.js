@@ -3,7 +3,7 @@
 *
 * @package custom-cards/lovelace-webasto-heater-card
 * @file webastoheater-card.js
-* @author Your Name/GitHub Username
+* @author ewgen198409
 * @license MIT
 */
 import { LitElement, html, css } from 'https://unpkg.com/lit-element@2.4.0/lit-element.js?module';
