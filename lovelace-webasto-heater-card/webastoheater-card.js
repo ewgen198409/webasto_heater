@@ -1,7 +1,7 @@
 /*
 * This is a Lovelace custom card for Webasto Heater.
 *
-* @package custom-cards/lovelace-webasto-heater-card
+* @package webasto_heater/lovelace-webasto-heater-card
 * @file webastoheater-card.js
 * @author ewgen198409
 * @license MIT
