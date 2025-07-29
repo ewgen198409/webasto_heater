@@ -18,9 +18,9 @@
 
 1.  Убедитесь, что у вас установлен [HACS](https://hacs.xyz/).
 2.  В Home Assistant, перейдите в **HACS -> Integrations -> Трехточечное меню (вверху справа) -> Custom repositories**.
-3.  Вставьте URL вашего репозитория GitHub: `https://github.com/your_username/webasto_heater` и выберите **Category: Integration**. Нажмите "Add repository".
+3.  Вставьте URL вашего репозитория GitHub: `https://github.com/ewgen198409/webasto_heater` и выберите **Category: Integration**. Нажмите "Add repository".
 4.  В Home Assistant, перейдите в **HACS -> Frontend -> Трехточечное меню (вверху справа) -> Custom repositories**.
-5.  Вставьте URL вашего репозитория GitHub: `https://github.com/your_username/webasto_heater` и выберите **Category: Lovelace**. В поле **"Path"** введите `lovelace-webasto-heater-card/webastoheater-card.js`. Нажмите "Add repository".
+5.  Вставьте URL вашего репозитория GitHub: `https://github.com/ewgen198409/webasto_heater` и выберите **Category: Lovelace**. В поле **"Path"** введите `lovelace-webasto-heater-card/webastoheater-card.js`. Нажмите "Add repository".
 6.  Перезагрузите Home Assistant.
 
 ### Вручную
