@@ -19,25 +19,24 @@
 1.  Убедитесь, что у вас установлен [HACS](https://hacs.xyz/).
 2.  В Home Assistant, перейдите в **HACS -> Integrations -> Трехточечное меню (вверху справа) -> Custom repositories**.
 3.  Вставьте URL вашего репозитория GitHub: `https://github.com/ewgen198409/webasto_heater` и выберите **Category: Integration**. Нажмите "Add repository".
-4.  В Home Assistant, перейдите в **HACS -> Frontend -> Трехточечное меню (вверху справа) -> Custom repositories**.
-5.  Вставьте URL вашего репозитория GitHub: `https://github.com/ewgen198409/webasto_heater` и выберите **Category: Lovelace**. В поле **"Path"** введите `lovelace-webasto-heater-card/webastoheater-card.js`. Нажмите "Add repository".
-6.  Перезагрузите Home Assistant.
+4.  Установите интеграцию Webasto Hater
+5.  Перезагрузите Home Assistant.
 
 ### Вручную
 
 1.  Создайте каталог `custom_components/webasto_heater/` в вашей конфигурационной папке Home Assistant.
 2.  Скопируйте все файлы из каталога `custom_components/webasto_heater/` вашего репозитория в только что созданный каталог.
-3.  Создайте каталог `www/community/lovelace-webasto-heater-card/` в вашей конфигурационной папке Home Assistant.
-4.  Скопируйте файл `webastoheater-card.js` из каталога `lovelace-webasto-heater-card/` вашего репозитория в `www/community/lovelace-webasto-heater-card/`.
-5.  Добавьте следующую строку в ваш файл `configuration.yaml` или через UI:
+
+### Установка карточки
+1.  Создайте каталог `www/community/lovelace-webasto-heater-card/` в вашей конфигурационной папке Home Assistant.
+2.  Скопируйте файл `webastoheater-card.js` из каталога `lovelace-webasto-heater-card/` вашего репозитория в `www/community/lovelace-webasto-heater-card/`.
+3.  Добавьте следующую строку в ваш файл `configuration.yaml` или через UI:
     ```yaml
     lovelace:
       resources:
         - url: /hacsfiles/lovelace-webasto-heater-card/webastoheater-card.js
           type: module
-    ```
-    (Если вы используете HACS, этот шаг не требуется для карточки, так как HACS добавит ресурс автоматически).
-6.  Перезагрузите Home Assistant.
+4.  Перезагрузите Home Assistant.
 
 ## ⚙️ Настройка интеграции
 
