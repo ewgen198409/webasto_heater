@@ -15,7 +15,8 @@ from homeassistant.exceptions import ConfigEntryNotReady
 
 _LOGGER = logging.getLogger(__name__)
 
-DOMAIN = "webasto_heater"
+# Изменено: DOMAIN теперь "webasto"
+DOMAIN = "webasto"
 WEBSOCKET_URL = "ws://{host}:81/"
 
 # Список платформ, которые будут загружены этой интеграцией

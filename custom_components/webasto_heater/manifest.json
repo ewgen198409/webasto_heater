@@ -1,5 +1,5 @@
 {
-  "domain": "webasto_heater",
+  "domain": "webasto",
   "name": "Webasto Heater",
   "config_flow": true,
   "documentation": "https://github.com/ewgen198409/webasto_heater",
@@ -7,6 +7,6 @@
   "dependencies": [],
   "codeowners": ["@your_github_username"],
   "requirements": ["websockets==13.1"],
-  "version": "1.1.0",
+  "version": "1.1.2",
   "iot_class": "local_push"
 }

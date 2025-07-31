@@ -1,15 +1,292 @@
-/*
-* This is a Lovelace custom card for Webasto Heater.
-*
-* @package webasto_heater/lovelace-webasto-heater-card
-* @file webastoheater-card.js
-* @author ewgen198409
-* @license MIT
-*/
 import { LitElement, html, css } from 'https://unpkg.com/lit-element@2.4.0/lit-element.js?module';
-import { styleMap } from 'https://unpkg.com/lit-html/directives/style-map.js?module'; // Импорт для динамического применения стилей
 
-// Класс WebastoHeaterCardEditor и его регистрация удалены.
+// Класс редактора для визуальной настройки карточки
+class WebastoHeaterCardEditor extends LitElement {
+    static get properties() {
+        return {
+            hass: {},
+            config: {}
+        };
+    }
+
+    setConfig(config) {
+        this.config = { ...config };
+    }
+
+    configChanged(newConfig) {
+        const event = new Event('config-changed', {
+            bubbles: true,
+            composed: true
+        });
+        event.detail = { config: newConfig };
+        this.dispatchEvent(event);
+    }
+
+    // Получаем список сущностей определенного типа
+    _getEntitiesByDomain(domain) {
+        if (!this.hass) return [];
+        
+        return Object.keys(this.hass.states)
+            .filter(entityId => entityId.startsWith(domain + '.'))
+            .map(entityId => ({
+                value: entityId,
+                label: `${entityId} (${this.hass.states[entityId].attributes.friendly_name || entityId})`
+            }))
+            .sort((a, b) => a.label.localeCompare(b.label));
+    }
+
+    // Рендер выпадающего списка сущностей
+    _renderEntitySelector(label, helpText, configKey, domain, placeholder = '') {
+        const entities = this._getEntitiesByDomain(domain);
+        const currentValue = this.config[configKey] || '';
+
+        return html`
+            <div class="config-row-vertical">
+                <div class="config-label-vertical">
+                    ${label}
+                    <div class="help-text">${helpText}</div>
+                </div>
+                <div class="config-input-vertical">
+                    <select
+                        .value=${currentValue}
+                        @change=${e => this.configChanged({ ...this.config, [configKey]: e.target.value })}
+                    >
+                        <option value="">${placeholder || 'Не выбрано'}</option>
+                        ${entities.map(entity => html`
+                            <option value="${entity.value}" ?selected=${entity.value === currentValue}>
+                                ${entity.label}
+                            </option>
+                        `)}
+                    </select>
+                </div>
+            </div>
+        `;
+    }
+
+    render() {
+        if (!this.config) {
+            return html`<div>Загрузка...</div>`;
+        }
+
+        const allSensorKeys = [
+            "temperatura_vykhlopa", "skorost_ventiliatora", "raskhod_topliva_gts",
+            "rezhim_goreniia", "popytka_zapuska", "sostoianie", "ssid_wi_fi",
+            "ip_adres_wi_fi", "tekushchee_potreblenie_topliva",
+            "raschetnyi_raskhod_za_chas", "tekushchii_rezhim"
+        ];
+        const allBinarySensorKeys = [
+            "gorenie_aktivno", "oshibka_webasto", "svecha_nakalivaniia",
+            "prokachka_topliva", "logirovanie_vkliucheno", "wi_fi_podkliuchen"
+        ];
+        const allNumberKeys = [
+            "razmer_nasosa", "tselevaia_temperatura_nagrevatelia",
+            "minimalnaia_temperatura_nagrevatelia", "temperatura_peregreva",
+            "temperatura_preduprezhdeniia", "maks_shim_ventiliatora",
+            "iarkost_svechi_nakalivaniia", "vremia_rozzhiga_svechi",
+            "vremia_zatukhaniia_svechi"
+        ];
+        const allButtonKeys = [
+            "vkliuchit_vykliuchit", "rezhim_vverkh", "rezhim_vniz",
+            "prokachka_topliva", "sbrosit_oshibku", "sokhranit_nastroiki",
+            "sbrosit_nastroiki", "zagruzit_nastroiki", "sbrosit_wi_fi",
+            "perezagruzit_esp", "sbrosit_potreblenie_topliva",
+            "vkliuchit_logirovanie", "vykliuchit_logirovanie"
+        ];
+
+
+        return html`
+            <style>
+                .config-row {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    padding: 8px 0;
+                    border-bottom: 1px solid var(--divider-color, #e0e0e0);
+                }
+                .config-row:last-child {
+                    border-bottom: none;
+                }
+                .config-label {
+                    font-weight: 500;
+                    min-width: 200px;
+                    color: var(--primary-text-color);
+                }
+                .config-input {
+                    flex: 1;
+                    margin-left: 16px;
+                }
+                /* Новые стили для вертикального расположения селекторов сущностей */
+                .config-row-vertical {
+                    display: flex;
+                    flex-direction: column; /* Элементы будут располагаться вертикально */
+                    padding: 8px 0;
+                    border-bottom: 1px solid var(--divider-color, #e0e0e0);
+                }
+                .config-row-vertical:last-child {
+                    border-bottom: none;
+                }
+                .config-label-vertical {
+                    font-weight: 500;
+                    margin-bottom: 4px; /* Отступ между лейблом и селектором */
+                    color: var(--primary-text-color);
+                }
+                .config-input-vertical {
+                    width: 100%; /* Занимает всю доступную ширину */
+                }
+
+
+                input, select {
+                    width: 100%;
+                    padding: 8px;
+                    border: 1px solid var(--secondary-background-color, #ccc);
+                    border-radius: 4px;
+                    font-size: 14px;
+                    background-color: var(--card-background-color, white);
+                    color: var(--primary-text-color);
+                }
+                select option {
+                    background-color: var(--card-background-color, white);
+                    color: var(--primary-text-color);
+                }
+                .color-input {
+                    width: 50px;
+                    height: 40px;
+                    padding: 0;
+                    border: none;
+                    border-radius: 4px;
+                    cursor: pointer;
+                }
+                .opacity-input {
+                    width: 100%;
+                }
+                .opacity-display {
+                    margin-left: 8px;
+                    font-weight: bold;
+                    min-width: 40px;
+                    color: var(--primary-text-color);
+                }
+                .section-title {
+                    font-size: 18px;
+                    font-weight: bold;
+                    margin: 16px 0 8px 0;
+                    color: var(--primary-color, #333);
+                    border-bottom: 2px solid var(--accent-color, #2196F3);
+                    padding-bottom: 4px;
+                }
+                .help-text {
+                    font-size: 12px;
+                    color: var(--secondary-text-color, #666);
+                    font-style: italic;
+                    margin-left: 16px;
+                }
+            </style>
+
+            <div class="card-config">
+                <div class="section-title">Основные настройки</div>
+                
+                <div class="config-row-vertical"> <!-- Изменено на вертикальное расположение -->
+                    <div class="config-label-vertical"> <!-- Изменено на вертикальное расположение -->
+                        Префикс сущностей
+                        <div class="help-text">Обычно это название вашей интеграции (например: webasto)</div>
+                    </div>
+                    <div class="config-input-vertical"> <!-- Изменено на вертикальное расположение -->
+                        <input
+                            type="text"
+                            .value=${this.config.entity_prefix || ''}
+                            @input=${e => this.configChanged({ ...this.config, entity_prefix: e.target.value })}
+                            placeholder="webasto"
+                        />
+                    </div>
+                </div>
+
+                <div class="section-title">Внешний вид</div>
+                
+                <div class="config-row">
+                    <div class="config-label">
+                        Цвет фона карточки
+                        <div class="help-text">Выберите цвет фона для всей карточки</div>
+                    </div>
+                    <div class="config-input" style="display: flex; align-items: center; gap: 8px;">
+                        <input
+                            type="color"
+                            class="color-input"
+                            .value=${this.config.background_color || '#1f2937'}
+                            @input=${e => this.configChanged({ ...this.config, background_color: e.target.value })}
+                        />
+                        <input
+                            type="text"
+                            .value=${this.config.background_color || '#1f2937'}
+                            @input=${e => this.configChanged({ ...this.config, background_color: e.target.value })}
+                            placeholder="#1f2937"
+                            style="flex: 1;"
+                        />
+                    </div>
+                </div>
+
+                <div class="config-row-vertical"> <!-- Изменено на вертикальное расположение -->
+                    <div class="config-label-vertical"> <!-- Изменено на вертикальное расположение -->
+                        Прозрачность фона
+                        <div class="help-text">0 = полностью прозрачный, 1 = полностью непрозрачный</div>
+                    </div>
+                    <div class="config-input-vertical" style="display: flex; align-items: center;"> <!-- Изменено на вертикальное расположение -->
+                        <input
+                            type="range"
+                            class="opacity-input"
+                            min="0"
+                            max="1"
+                            step="0.05"
+                            .value=${this.config.background_opacity !== undefined ? this.config.background_opacity : 1}
+                            @input=${e => this.configChanged({ ...this.config, background_opacity: parseFloat(e.target.value) })}
+                        />
+                        <span class="opacity-display">${this.config.background_opacity !== undefined ? (this.config.background_opacity * 100).toFixed(0) + '%' : '100%'}</span>
+                    </div>
+                </div>
+
+                <div class="section-title">Настройки сущностей</div>
+                
+                ${this._renderEntitySelector(
+                    'Датчик доступности устройства',
+                    'ID сущности, которая показывает доступность устройства (например, binary_sensor.webasto_wi_fi_podkliuchen)',
+                    'availability_entity',
+                    'binary_sensor',
+                    'Выберите датчик доступности'
+                )}
+
+                ${allSensorKeys.map(key => this._renderEntitySelector(
+                    `Сенсор: ${key.replace(/_/g, ' ')}`,
+                    `ID сущности сенсора (например, sensor.${this.config.entity_prefix || 'webasto'}_${key})`,
+                    `sensor_${key}`,
+                    'sensor',
+                    `Выберите сенсор для ${key.replace(/_/g, ' ')}`
+                ))}
+                ${allBinarySensorKeys.map(key => this._renderEntitySelector(
+                    `Бинарный сенсор: ${key.replace(/_/g, ' ')}`,
+                    `ID сущности бинарного сенсора (например, binary_sensor.${this.config.entity_prefix || 'webasto'}_${key})`,
+                    `binary_sensor_${key}`,
+                    'binary_sensor',
+                    `Выберите бинарный сенсор для ${key.replace(/_/g, ' ')}`
+                ))}
+                ${allNumberKeys.map(key => this._renderEntitySelector(
+                    `Числовая сущность: ${key.replace(/_/g, ' ')}`,
+                    `ID числовой сущности (например, number.${this.config.entity_prefix || 'webasto'}_${key})`,
+                    `number_${key}`,
+                    'number',
+                    `Выберите числовую сущность для ${key.replace(/_/g, ' ')}`
+                ))}
+                ${allButtonKeys.map(key => this._renderEntitySelector(
+                    `Кнопка: ${key.replace(/_/g, ' ')}`,
+                    `ID сущности кнопки (например, button.${this.config.entity_prefix || 'webasto'}_${key})`,
+                    `button_${key}`,
+                    'button',
+                    `Выберите кнопку для ${key.replace(/_/g, ' ')}`
+                ))}
+            </div>
+        `;
+    }
+}
+
+// Регистрируем редактор
+customElements.define('webastoheater-card-editor', WebastoHeaterCardEditor);
 
 class WebastoHeaterCard extends LitElement {
     static get properties() {
@@ -30,8 +307,11 @@ class WebastoHeaterCard extends LitElement {
     setConfig(config) {
         // Проверка на минимальную конфигурацию. Если нет префикса и явно указанных сущностей,
         // выводим предупреждение. Это предупреждение нормально на этапе настройки.
-        if (!config.entity_prefix && !config.warning_temp_entity && !config.max_pwm_fan_entity &&
-            !config.save_settings_button && !config.reset_settings_button && !config.load_settings_button) {
+        if (!config.entity_prefix && 
+            !config.availability_entity &&
+            !config.sensor_temperatura_vykhlopa && !config.binary_sensor_gorenie_aktivno &&
+            !config.number_razmer_nasosa && !config.button_vkliuchit_vykliuchit
+        ) {
             console.warn('Вы должны определить entity_prefix или явно указать сущности в конфигурации карточки.');
         }
         // Копируем конфигурацию, чтобы избежать прямых изменений
@@ -45,91 +325,53 @@ class WebastoHeaterCard extends LitElement {
     }
 
     _updateEntities() {
-        const prefix = this.config.entity_prefix;
+        const prefix = this.config.entity_prefix || 'webasto'; // Используем 'webasto' как дефолтный префикс
         const newEntities = {};
 
         const sensorKeys = [
-            "temperatura_vykhlopa",
-            "skorost_ventiliatora",
-            "raskhod_topliva_gts",
-            "rezhim_goreniia",
-            "popytka_zapuska",
-            "sostoianie",
-            "ssid_wi_fi",
-            "ip_adres_wi_fi",
-            "tekushchee_potreblenie_topliva",
-            "raschetnyi_raskhod_za_chas",
-            "tekushchii_rezhim"
+            "temperatura_vykhlopa", "skorost_ventiliatora", "raskhod_topliva_gts",
+            "rezhim_goreniia", "popytka_zapuska", "sostoianie", "ssid_wi_fi",
+            "ip_adres_wi_fi", "tekushchee_potreblenie_topliva",
+            "raschetnyi_raskhod_za_chas", "tekushchii_rezhim"
         ];
         sensorKeys.forEach(key => {
-            newEntities[`sensor_${key}`] = this.hass.states[`sensor.${prefix}_${key}`];
+            newEntities[`sensor_${key}`] = this.hass.states[this.config[`sensor_${key}`] || `sensor.${prefix}_${key}`];
         });
 
         const binarySensorKeys = [
-            "gorenie_aktivno",
-            "oshibka_webasto",
-            "svecha_nakalivaniia",
-            "prokachka_topliva",
-            "logirovanie_vkliucheno",
-            "wi_fi_podkliuchen"
+            "gorenie_aktivno", "oshibka_webasto", "svecha_nakalivaniia",
+            "prokachka_topliva", "logirovanie_vkliucheno", "wi_fi_podkliuchen"
         ];
         binarySensorKeys.forEach(key => {
-            newEntities[`binary_sensor_${key}`] = this.hass.states[`binary_sensor.${prefix}_${key}`];
+            newEntities[`binary_sensor_${key}`] = this.hass.states[this.config[`binary_sensor_${key}`] || `binary_sensor.${prefix}_${key}`];
         });
 
         const numberKeys = [
-            "razmer_nasosa",
-            "tselevaia_temperatura_nagrevatelia",
-            "minimalnaia_temperatura_nagrevatelia",
-            "temperatura_peregreva",
-            "temperatura_preduprezhdeniia", 
-            "maks_shim_ventiliatora", 
-            "iarkost_svechi_nakalivaniia",
-            "vremia_rozzhiga_svechi",
+            "razmer_nasosa", "tselevaia_temperatura_nagrevatelia",
+            "minimalnaia_temperatura_nagrevatelia", "temperatura_peregreva",
+            "temperatura_preduprezhdeniia", "maks_shim_ventiliatora",
+            "iarkost_svechi_nakalivaniia", "vremia_rozzhiga_svechi",
             "vremia_zatukhaniia_svechi"
         ];
         numberKeys.forEach(key => {
-            let entityId;
-            // Приоритет явно указанным сущностям из конфигурации редактора
-            if (key === 'temperatura_preduprezhdeniia' && this.config.warning_temp_entity) {
-                entityId = this.config.warning_temp_entity;
-            } else if (key === 'maks_shim_ventiliatora' && this.config.max_pwm_fan_entity) {
-                entityId = this.config.max_pwm_fan_entity;
-            } else {
-                entityId = `number.${prefix}_${key}`;
-            }
-            newEntities[`number_${key}`] = this.hass.states[entityId];
+            newEntities[`number_${key}`] = this.hass.states[this.config[`number_${key}`] || `number.${prefix}_${key}`];
         });
 
         const buttonKeys = [
-            "vkliuchit_vykliuchit",
-            "rezhim_vverkh",
-            "rezhim_vniz",
-            "prokachka_topliva",
-            "sbrosit_oshibku",
-            "sokhranit_nastroiki",
-            "sbrosit_nastroiki",
-            "zagruzit_nastroiki",
-            "sbrosit_wi_fi",
-            "perezagruzit_esp",
-            "sbrosit_potreblenie_topliva",
-            "vkliuchit_logirovanie",
-            "vykliuchit_logirovanie"
+            "vkliuchit_vykliuchit", "rezhim_vverkh", "rezhim_vniz",
+            "prokachka_topliva", "sbrosit_oshibku", "sokhranit_nastroiki",
+            "sbrosit_nastroiki", "zagruzit_nastroiki", "sbrosit_wi_fi",
+            "perezagruzit_esp", "sbrosit_potreblenie_topliva",
+            "vkliuchit_logirovanie", "vykliuchit_logirovanie"
         ];
         buttonKeys.forEach(key => {
-            let entityId;
-            // Приоритет явно указанным сущностям из конфигурации редактора
-            if (key === 'sokhranit_nastroiki' && this.config.save_settings_button) {
-                entityId = this.config.save_settings_button;
-            } else if (key === 'sbrosit_nastroiki' && this.config.reset_settings_button) {
-                entityId = this.config.reset_settings_button;
-            } else if (key === 'zagruzit_nastroiki' && this.config.load_settings_button) {
-                entityId = this.config.load_settings_button;
-            } else {
-                entityId = `button.${prefix}_${key}`;
-            }
-            newEntities[`button_${key}`] = this.hass.states[entityId];
+            newEntities[`button_${key}`] = this.hass.states[this.config[`button_${key}`] || `button.${prefix}_${key}`];
         });
+
+        // Добавляем сущность доступности
+        newEntities['availability_entity'] = this.hass.states[this.config.availability_entity || `binary_sensor.${prefix}_wi_fi_podkliuchen`];
+
+        // Удалена строка newEntities['reload_entity'] = ... так как она больше не нужна
 
         this._entities = newEntities;
         this.requestUpdate(); // Запрашиваем обновление компонента
@@ -152,6 +394,54 @@ class WebastoHeaterCard extends LitElement {
             })
             .catch(error => {
                 console.error(`Ошибка вызова сервиса ${domain}.${service} для ${entityId}:`, error);
+            });
+    }
+
+    // Добавлена функция для перезагрузки интеграции
+    _reloadIntegration() {
+        if (!this.hass) {
+            console.error('Объект Hass недоступен.');
+            return;
+        }
+
+        const prefix = this.config.entity_prefix || 'webasto';
+        let configEntryId = null;
+
+        // Попытка получить config_entry_id из сущности доступности, если она настроена
+        const availabilityEntity = this._entities['availability_entity'];
+        if (availabilityEntity && availabilityEntity.attributes && availabilityEntity.attributes.config_entry_id) {
+            configEntryId = availabilityEntity.attributes.config_entry_id;
+        } else {
+            // Резервный вариант: итерация по всем сущностям для поиска любой сущности из этой интеграции
+            for (const entityId in this.hass.states) {
+                // Проверяем, начинается ли entityId с префикса интеграции
+                // Учитываем возможные форматы: webasto.entity_id, sensor.webasto_entity_id, etc.
+                if (entityId.startsWith(`${prefix}.`) || 
+                    entityId.startsWith(`sensor.${prefix}_`) || 
+                    entityId.startsWith(`binary_sensor.${prefix}_`) || 
+                    entityId.startsWith(`number.${prefix}_`) || 
+                    entityId.startsWith(`button.${prefix}_`)) 
+                {
+                    const entity = this.hass.states[entityId];
+                    if (entity.attributes && entity.attributes.config_entry_id) {
+                        configEntryId = entity.attributes.config_entry_id;
+                        break; // Нашли, выходим
+                    }
+                }
+            }
+        }
+
+        if (!configEntryId) {
+            console.error('Не удалось найти config_entry_id для перезагрузки интеграции. Убедитесь, что интеграция Webasto Heater установлена и имеет хотя бы одну сущность с атрибутом config_entry_id.');
+            return;
+        }
+
+        this.hass.callService('homeassistant', 'reload_config_entry', { entry_id: configEntryId })
+            .then(() => {
+                console.log(`Интеграция Webasto Heater (config_entry_id: ${configEntryId}) успешно перезагружена.`);
+            })
+            .catch(error => {
+                console.error(`Ошибка перезагрузки интеграции Webasto Heater (config_entry_id: ${configEntryId}):`, error);
             });
     }
 
@@ -296,29 +586,25 @@ class WebastoHeaterCard extends LitElement {
 
         const messageEntity = this._entities['sensor_sostoianie'];
         const burnEntity = this._entities['binary_sensor_gorenie_aktivno'];
+        const availabilityEntity = this._entities['availability_entity']; // Получаем сущность доступности
+
         const messageState = messageEntity ? messageEntity.state : 'Неизвестно';
         const burnState = burnEntity ? burnEntity.state : 'off';
+        const isDeviceAvailable = availabilityEntity ? availabilityEntity.state === 'on' : false; // Проверяем доступность
 
         const statusIndicatorColor = burnState === 'on' ? 'bg-green-500' : 'bg-red-500';
+        const deviceStatusText = isDeviceAvailable ? 'Online' : 'Offline';
+        const deviceStatusColor = isDeviceAvailable ? 'text-green-400' : 'text-red-400';
 
-        // Получаем цвет фона и прозрачность из конфигурации, с запасными значениями по умолчанию
-        const customBackgroundColor = this.config.background_color;
-        const customBackgroundOpacity = this.config.background_opacity;
-
-        const defaultBackgroundColor = '#1f2937'; // Оригинальный цвет фона
-        const defaultBackgroundOpacity = 1; // Оригинальная прозрачность
-
-        const finalBackgroundColor = customBackgroundColor || defaultBackgroundColor;
-        const finalBackgroundOpacity = customBackgroundOpacity !== undefined ? customBackgroundOpacity : defaultBackgroundOpacity;
-
-        const cardStyles = styleMap({
-            'background-color': finalBackgroundColor, // Применяем цвет фона напрямую
-            'opacity': finalBackgroundOpacity,        // Применяем прозрачность напрямую
-            '--ha-card-background': finalBackgroundColor, // Сохраняем переменную для использования в других элементах (например, вкладках)
-        });
+        // Получаем цвет фона и прозрачность из конфигурации
+        const backgroundColorRgb = this._hexToRgb(this.config.background_color || '#1f2937');
+        const backgroundOpacity = this.config.background_opacity !== undefined ? this.config.background_opacity : 1;
+        
+        // Создаем rgba строку
+        const cardBackgroundColor = `rgba(${backgroundColorRgb.r}, ${backgroundColorRgb.g}, ${backgroundColorRgb.b}, ${backgroundOpacity})`;
 
         return html`
-            <ha-card class="text-white rounded-lg shadow-xl font-inter" style=${cardStyles}>
+            <ha-card class="text-white rounded-lg shadow-xl font-inter" style="background-color: ${cardBackgroundColor}; --ha-card-background: ${cardBackgroundColor};">
                 <style>
                     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
                     
@@ -327,13 +613,12 @@ class WebastoHeaterCard extends LitElement {
                         font-family: 'Inter', sans-serif;
                     }
                     ha-card {
-                        /* Эти переменные будут установлены через inline style. */ 
                         --primary-text-color: #f9fafb;
                         --secondary-text-color: #d1d5db;
                         --mdc-icon-size: 20px;
                         border-radius: 0.75rem;
                         box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-                        /* background-color и opacity теперь устанавливаются через styleMap */
+                        position: relative; /* Для позиционирования кнопки перезагрузки */
                     }
                     .card-content {
                         padding: 0 12px 12px;
@@ -358,12 +643,13 @@ class WebastoHeaterCard extends LitElement {
                     }
                     .tab-container {
                         display: flex;
-                        justify-content: center;
+                        justify-content: space-around; /* Изменено для растягивания */
                         border-bottom: 1px solid #374151;
                         margin-bottom: 12px;
                         padding: 0 8px;
                     }
                     .tab-button {
+                        flex: 1; /* Кнопки растягиваются */
                         padding: 6px 12px;
                         font-size: 0.75rem;
                         font-weight: 600;
@@ -377,9 +663,10 @@ class WebastoHeaterCard extends LitElement {
                         bottom: -1px;
                         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
                         height: 28px;
+                        text-align: center; /* Центрирование текста */
                     }
                     .tab-button.active {
-                        background-color: var(--ha-card-background); /* Используем цвет фона карточки */
+                        background-color: var(--ha-card-background);
                         color: #f9fafb;
                         box-shadow: 0 0 0 1px #3b82f6, 0 2px 4px rgba(0, 0, 0, 0.1);
                     }
@@ -448,6 +735,12 @@ class WebastoHeaterCard extends LitElement {
                         background-color: #dc2626;
                         background-image: linear-gradient(to bottom, #dc2626, #b91c1c);
                     }
+                    /* Эффект нажатия для всех кнопок */
+                    .custom-button:active {
+                        transform: scale(0.98); /* Немного уменьшаем при нажатии */
+                        box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2); /* Эффект вдавленности */
+                    }
+
                     .button-row {
                         display: flex;
                         gap: 8px;
@@ -465,7 +758,7 @@ class WebastoHeaterCard extends LitElement {
                     .compact-buttons > .custom-button {
                         margin: 0;
                     }
-					.control-grid {
+                    .control-grid {
                         display: grid;
                         grid-template-columns: 1fr 1fr;
                         gap: 8px;
@@ -485,10 +778,53 @@ class WebastoHeaterCard extends LitElement {
                     .mode-buttons > .custom-button {
                         flex: 1;
                     }
+                    .header-content {
+                        display: flex;
+                        align-items: center;
+                        justify-content: flex-start; /* Прижимаем к левому краю */
+                        padding-top: 12px;
+                        padding-bottom: 8px;
+                        padding-left: 12px; /* Добавляем отступ слева */
+                    }
+                    .webasto-logo {
+                        height: 30px; /* Адаптируйте размер по необходимости */
+                        width: auto;
+                        margin-right: 10px; /* Отступ справа от логотипа */
+                    }
+                    .status-text {
+                        font-size: 0.9rem;
+                        font-weight: 600;
+                    }
+                    .reload-button {
+                        position: absolute;
+                        top: 4px; /* Прижимаем ближе к углу */
+                        right: 4px; /* Прижимаем ближе к углу */
+                        background: none;
+                        border: none;
+                        color: var(--secondary-text-color);
+                        cursor: pointer;
+                        padding: 4px;
+                        border-radius: 50%;
+                        transition: background-color 0.2s ease-in-out;
+                        z-index: 10; /* Убедимся, что кнопка поверх других элементов */
+                    }
+                    .reload-button:hover {
+                        background-color: rgba(255, 255, 255, 0.1);
+                    }
+                    .reload-button ha-icon {
+                        --mdc-icon-size: 20px;
+                    }
                 </style>
 
                 <div class="card-content">
-                    <h1 class="text-xl font-bold text-white mb-4 text-center pt-3">Webasto</h1>
+                    <div class="header-content">
+                        <img src="/local/community/lovelace-webasto-heater-card/Webasto_20xx_logo.svg.png" class="webasto-logo" alt="Webasto Logo">
+                        <span class="status-text ${deviceStatusColor}">${deviceStatusText}</span>
+                    </div>
+
+                    <button class="reload-button" @click="${this._reloadIntegration}" title="Перезагрузить интеграцию">
+                        <ha-icon icon="mdi:restart"></ha-icon>
+                    </button>
 
                     <div class="tab-container">
                         ${tabs.map(tab => html`
@@ -602,24 +938,45 @@ class WebastoHeaterCard extends LitElement {
         `;
     }
 
+    // Функция для конвертации HEX в RGB
+    _hexToRgb(hex) {
+        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        return result ? {
+            r: parseInt(result[1], 16),
+            g: parseInt(result[2], 16),
+            b: parseInt(result[3], 16)
+        } : {r: 31, g: 41, b: 55}; // Fallback to default color
+    }
+
     getCardSize() {
         return 8;
     }
 
-    // Метод getEditorElement() удален.
+    // Возвращаем экземпляр редактора для визуального редактирования
+    static getConfigElement() {
+        return document.createElement('webastoheater-card-editor');
+    }
 
+    // Валидация конфигурации (опционально)
+    static getStubConfig() {
+        return {
+            entity_prefix: 'webasto', // Изменено на 'webasto' по умолчанию
+            background_color: '#1f2937',
+            background_opacity: 1
+        };
+    }
 }
 
 // Определяем пользовательский элемент карточки
 customElements.define('webastoheater-card', WebastoHeaterCard);
 
-// Добавляем метаданные для Home Assistant.
-// configurable теперь установлен в false, так как визуальный редактор удален.
+// Добавляем метаданты для Home Assistant.
+// configurable теперь установлен в true, так как визуальный редактор добавлен.
 window.customCards = window.customCards || [];
 window.customCards.push({
   type: 'webastoheater-card',
   name: 'Карточка управления Webasto',
   description: 'Карточка для управления Webasto с расширенными настройками',
-  preview: true, // Предварительный просмотр все еще доступен
-  configurable: false, // Визуальный редактор не поддерживается
+  preview: true, // Предварительный просмотр доступен
+  configurable: true, // Визуальный редактор поддерживается
 });
