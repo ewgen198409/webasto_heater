@@ -3,7 +3,7 @@
 ![Home Assistant](https://img.shields.io/badge/Home%20Assistant-000000?style=for-the-badge&logo=home-assistant&logoColor=white)
 ![HACS](https://img.shields.io/badge/HACS-Custom%20Integration-orange?style=for-the-badge&logo=home-assistant&logoColor=white)
 
-Эта интеграция позволяет управлять и мониторить ваш автономный отопитель Webasto через контроллер на ESP8266, интегрируя его в Home Assistant.
+Эта интеграция позволяет управлять и мониторить ваш автономный отопитель Webasto (сухой фен) построенный на контроллере ESP8266, интегрируя его в Home Assistant.
 
 ## ✨ Особенности
 
