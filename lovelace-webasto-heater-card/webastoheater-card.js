@@ -91,7 +91,7 @@ class WebastoHeaterCardEditor extends LitElement {
             "sbrosit_nastroiki", "zagruzit_nastroiki", "sbrosit_wi_fi",
             "perezagruzit_esp", "sbrosit_potreblenie_topliva",
             "vkliuchit_logirovanie", "vykliuchit_logirovanie",
-            "reconnect_websocket" // Добавлена новая кнопка переподключения
+            "perepodkliuchit_websocket" // Изменено: новая кнопка переподключения
         ];
 
 
@@ -364,7 +364,7 @@ class WebastoHeaterCard extends LitElement {
             "sbrosit_nastroiki", "zagruzit_nastroiki", "sbrosit_wi_fi",
             "perezagruzit_esp", "sbrosit_potreblenie_topliva",
             "vkliuchit_logirovanie", "vykliuchit_logirovanie",
-            "reconnect_websocket" // Добавлена новая кнопка переподключения
+            "perepodkliuchit_websocket" // Изменено: новая кнопка переподключения
         ];
         buttonKeys.forEach(key => {
             newEntities[`button_${key}`] = this.hass.states[this.config[`button_${key}`] || `button.${prefix}_${key}`];
@@ -396,9 +396,6 @@ class WebastoHeaterCard extends LitElement {
                 console.error(`Ошибка вызова сервиса ${domain}.${service} для ${entityId}:`, error);
             });
     }
-
-    // Удалена функция _reloadIntegration, так как она больше не нужна.
-    // Ее функционал теперь будет выполняться через новую кнопку "Переподключить WebSocket".
 
     _renderSection(title, content, subtitle = '') {
         return html`
@@ -778,7 +775,7 @@ class WebastoHeaterCard extends LitElement {
                     </div>
 
                     <button class="reload-button" 
-                            @click="${() => this._callService('button', 'press', this._entities['button_reconnect_websocket']?.entity_id)}" 
+                            @click="${() => this._callService('button', 'press', this._entities['button_perepodkliuchit_websocket']?.entity_id)}" 
                             title="Переподключить WebSocket">
                         <ha-icon icon="mdi:link-variant-plus"></ha-icon>
                     </button>

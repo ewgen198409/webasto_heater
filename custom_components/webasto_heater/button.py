@@ -35,7 +35,7 @@ async def async_setup_entry(
     webasto_data: WebastoHeaterData = hass.data[DOMAIN][config_entry.entry_id]
 
     # Добавляем кнопки
-    buttons: List[ButtonEntity] = [ # Изменено на ButtonEntity для корректного типа
+    buttons: List[ButtonEntity] = [
         WebastoHeaterButton(webasto_data, "toggle_burn", "Включить / Выключить", "ENTER"),
         WebastoHeaterButton(webasto_data, "up_mode", "Режим Вверх", "UP"),
         WebastoHeaterButton(webasto_data, "down_mode", "Режим Вниз", "DOWN"),
@@ -178,7 +178,8 @@ class WebastoHeaterReconnectButton(ButtonEntity):
         """Initialize the reconnect button."""
         self._webasto_data = webasto_data
         self._attr_name = "Webasto Переподключить WebSocket"
-        self._attr_unique_id = "webasto_reconnect_websocket" # Уникальный ID для новой кнопки
+        # Изменено: unique_id теперь соответствует запрошенному формату
+        self._attr_unique_id = "webasto_perepodkliuchit_websocket" 
         self._attr_icon = "mdi:link-variant-plus" # Иконка для переподключения
 
         self._attr_device_info = DeviceInfo(
