@@ -893,7 +893,7 @@ class WebastoHeaterCard extends LitElement {
                             `)}
                             
                             <div class="mt-4">
-                                ${this._renderButton('sbrosit_potreblenie_topliva', 'Сбросить расход', 'mdi:fuel-off', false, true, '', true)}
+                                ${this._renderButton('sbrosit_potreblenie_topliva', 'Сбросить расход', 'mdi:barrel-outline', false, true, '', true)}
                             </div>
                         ` : ''}
                     </div>
