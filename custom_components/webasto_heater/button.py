@@ -35,7 +35,7 @@ async def async_setup_entry(
     webasto_data: WebastoHeaterData = hass.data[DOMAIN][config_entry.entry_id]
 
     # Добавляем кнопки
-    buttons: List[WebastoHeaterButton] = [
+    buttons: List[ButtonEntity] = [ # Изменено на ButtonEntity для корректного типа
         WebastoHeaterButton(webasto_data, "toggle_burn", "Включить / Выключить", "ENTER"),
         WebastoHeaterButton(webasto_data, "up_mode", "Режим Вверх", "UP"),
         WebastoHeaterButton(webasto_data, "down_mode", "Режим Вниз", "DOWN"),
@@ -49,6 +49,7 @@ async def async_setup_entry(
         WebastoHeaterButton(webasto_data, "reset_fuel_consumption", "Сбросить потребление топлива", "RESET_FUEL_CONSUMPTION"),
         WebastoHeaterButton(webasto_data, "enable_logging", "Включить логирование", "LOG_ON"),
         WebastoHeaterButton(webasto_data, "disable_logging", "Выключить логирование", "LOG_OFF"),
+        WebastoHeaterReconnectButton(webasto_data), # Новая кнопка для переподключения
     ]
     async_add_entities(buttons)
 
@@ -169,3 +170,31 @@ class WebastoHeaterSaveSettingsButton(ButtonEntity):
         """Unregister callbacks when entity is removed."""
         # Этот метод нужен для очистки ресурсов, если сущность удаляется.
         pass
+
+class WebastoHeaterReconnectButton(ButtonEntity):
+    """Representation of a button to force WebSocket reconnection."""
+
+    def __init__(self, webasto_data: WebastoHeaterData):
+        """Initialize the reconnect button."""
+        self._webasto_data = webasto_data
+        self._attr_name = "Webasto Переподключить WebSocket"
+        self._attr_unique_id = "webasto_reconnect_websocket" # Уникальный ID для новой кнопки
+        self._attr_icon = "mdi:link-variant-plus" # Иконка для переподключения
+
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, "webasto_heater_main")},
+            name="Webasto Heater",
+            manufacturer="Custom",
+            model="ESP8266 Webasto",
+        )
+
+    @property
+    def available(self) -> bool:
+        """Return if entity is available."""
+        # Доступность кнопки зависит от доступности основного соединения
+        return self._webasto_data.is_connected
+
+    async def async_press(self) -> None:
+        """Handle the button press to force reconnection."""
+        _LOGGER.debug("Reconnect WebSocket button pressed. Calling async_reconnect_websocket.")
+        await self._webasto_data.async_reconnect_websocket()

@@ -269,6 +269,18 @@ class WebastoHeaterData:
                 
         await self._close_websocket()
 
+    async def async_reconnect_websocket(self):
+        """Force a reconnection of the WebSocket."""
+        _LOGGER.info("Forcing Webasto WebSocket reconnection...")
+        # Останавливаем текущее соединение, это также установит _stop_event
+        await self.stop() 
+        # Очищаем _stop_event, чтобы разрешить новое подключение
+        self._stop_event.clear() 
+        # Сбрасываем счетчик попыток переподключения
+        self._reconnect_attempts = 0 
+        # Пытаемся подключиться снова
+        await self.connect() 
+
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Set up the Webasto Heater component."""

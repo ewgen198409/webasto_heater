@@ -90,7 +90,8 @@ class WebastoHeaterCardEditor extends LitElement {
             "prokachka_topliva", "sbrosit_oshibku", "sokhranit_nastroiki",
             "sbrosit_nastroiki", "zagruzit_nastroiki", "sbrosit_wi_fi",
             "perezagruzit_esp", "sbrosit_potreblenie_topliva",
-            "vkliuchit_logirovanie", "vykliuchit_logirovanie"
+            "vkliuchit_logirovanie", "vykliuchit_logirovanie",
+            "reconnect_websocket" // Добавлена новая кнопка переподключения
         ];
 
 
@@ -362,7 +363,8 @@ class WebastoHeaterCard extends LitElement {
             "prokachka_topliva", "sbrosit_oshibku", "sokhranit_nastroiki",
             "sbrosit_nastroiki", "zagruzit_nastroiki", "sbrosit_wi_fi",
             "perezagruzit_esp", "sbrosit_potreblenie_topliva",
-            "vkliuchit_logirovanie", "vykliuchit_logirovanie"
+            "vkliuchit_logirovanie", "vykliuchit_logirovanie",
+            "reconnect_websocket" // Добавлена новая кнопка переподключения
         ];
         buttonKeys.forEach(key => {
             newEntities[`button_${key}`] = this.hass.states[this.config[`button_${key}`] || `button.${prefix}_${key}`];
@@ -370,8 +372,6 @@ class WebastoHeaterCard extends LitElement {
 
         // Добавляем сущность доступности
         newEntities['availability_entity'] = this.hass.states[this.config.availability_entity || `binary_sensor.${prefix}_wi_fi_podkliuchen`];
-
-        // Удалена строка newEntities['reload_entity'] = ... так как она больше не нужна
 
         this._entities = newEntities;
         this.requestUpdate(); // Запрашиваем обновление компонента
@@ -397,53 +397,8 @@ class WebastoHeaterCard extends LitElement {
             });
     }
 
-    // Добавлена функция для перезагрузки интеграции
-    _reloadIntegration() {
-        if (!this.hass) {
-            console.error('Объект Hass недоступен.');
-            return;
-        }
-
-        const prefix = this.config.entity_prefix || 'webasto';
-        let configEntryId = null;
-
-        // Попытка получить config_entry_id из сущности доступности, если она настроена
-        const availabilityEntity = this._entities['availability_entity'];
-        if (availabilityEntity && availabilityEntity.attributes && availabilityEntity.attributes.config_entry_id) {
-            configEntryId = availabilityEntity.attributes.config_entry_id;
-        } else {
-            // Резервный вариант: итерация по всем сущностям для поиска любой сущности из этой интеграции
-            for (const entityId in this.hass.states) {
-                // Проверяем, начинается ли entityId с префикса интеграции
-                // Учитываем возможные форматы: webasto.entity_id, sensor.webasto_entity_id, etc.
-                if (entityId.startsWith(`${prefix}.`) || 
-                    entityId.startsWith(`sensor.${prefix}_`) || 
-                    entityId.startsWith(`binary_sensor.${prefix}_`) || 
-                    entityId.startsWith(`number.${prefix}_`) || 
-                    entityId.startsWith(`button.${prefix}_`)) 
-                {
-                    const entity = this.hass.states[entityId];
-                    if (entity.attributes && entity.attributes.config_entry_id) {
-                        configEntryId = entity.attributes.config_entry_id;
-                        break; // Нашли, выходим
-                    }
-                }
-            }
-        }
-
-        if (!configEntryId) {
-            console.error('Не удалось найти config_entry_id для перезагрузки интеграции. Убедитесь, что интеграция Webasto Heater установлена и имеет хотя бы одну сущность с атрибутом config_entry_id.');
-            return;
-        }
-
-        this.hass.callService('homeassistant', 'reload_config_entry', { entry_id: configEntryId })
-            .then(() => {
-                console.log(`Интеграция Webasto Heater (config_entry_id: ${configEntryId}) успешно перезагружена.`);
-            })
-            .catch(error => {
-                console.error(`Ошибка перезагрузки интеграции Webasto Heater (config_entry_id: ${configEntryId}):`, error);
-            });
-    }
+    // Удалена функция _reloadIntegration, так как она больше не нужна.
+    // Ее функционал теперь будет выполняться через новую кнопку "Переподключить WebSocket".
 
     _renderSection(title, content, subtitle = '') {
         return html`
@@ -822,8 +777,10 @@ class WebastoHeaterCard extends LitElement {
                         <span class="status-text ${deviceStatusColor}">${deviceStatusText}</span>
                     </div>
 
-                    <button class="reload-button" @click="${this._reloadIntegration}" title="Перезагрузить интеграцию">
-                        <ha-icon icon="mdi:restart"></ha-icon>
+                    <button class="reload-button" 
+                            @click="${() => this._callService('button', 'press', this._entities['button_reconnect_websocket']?.entity_id)}" 
+                            title="Переподключить WebSocket">
+                        <ha-icon icon="mdi:link-variant-plus"></ha-icon>
                     </button>
 
                     <div class="tab-container">
@@ -916,7 +873,7 @@ class WebastoHeaterCard extends LitElement {
                             
                             <div class="compact-buttons mt-4">
                                 ${this._renderButton('sbrosit_wi_fi', 'Сбросить Wi-Fi', 'mdi:wifi-off', false, false, '', true)}
-                                ${this._renderButton('perezagruzit_esp', 'Перезагрузить', 'mdi:restart', false, false, '', true)}
+                                ${this._renderButton('perezagruzit_esp', 'Перезагрузить ESP', 'mdi:restart', false, false, '', true)}
                             </div>
                         ` : ''}
 
