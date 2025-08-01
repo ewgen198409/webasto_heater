@@ -471,12 +471,22 @@ class WebastoHeaterCard extends LitElement {
         const step = entity ? entity.attributes.step : 1;
         const icon = entity ? entity.attributes.icon : 'mdi:numeric';
 
+        let displayValue = value !== undefined && !isNaN(value) ? `${value}${unit}` : 'Неизвестно';
+
+        // Добавляем расчет процентов для "Макс. ШИМ вентилятора" и "Яркость свечи"
+        if (key === 'maks_shim_ventiliatora' || key === 'iarkost_svechi_nakalivaniia') {
+            if (value !== undefined && !isNaN(value) && max > 0) {
+                const percentage = ((value / max) * 100).toFixed(0); // Округляем до целого процента
+                displayValue = `${value}${unit} (${percentage}%)`;
+            }
+        }
+
         return html`
             <div class="flex flex-col p-2 bg-gray-800 rounded-md mb-2">
                 <div class="flex items-center mb-1">
                     <ha-icon .icon=${icon} class="text-blue-400 mr-2"></ha-icon>
                     <span class="text-gray-300 text-sm">${name}:</span>
-                    <span class="text-white font-medium ml-auto text-sm">${value !== undefined && !isNaN(value) ? `${value}${unit}` : 'Неизвестно'}</span>
+                    <span class="text-white font-medium ml-auto text-sm">${displayValue}</span>
                 </div>
                 <input
                     type="range"

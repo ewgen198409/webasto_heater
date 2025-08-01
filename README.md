@@ -24,7 +24,7 @@
 
 ### Вручную
 
-1.  Создайте каталог `custom_components/webasto_heater/` в вашей конфигурационной папке Home Assistant.
+1.  Создайте каталог `custom_components/webasto/` в вашей конфигурационной папке Home Assistant.
 2.  Скопируйте все файлы из каталога `custom_components/webasto_heater/` вашего репозитория в только что созданный каталог.
 
 ### Установка карточки
